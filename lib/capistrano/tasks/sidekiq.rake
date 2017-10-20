@@ -39,6 +39,15 @@ namespace :sidekiq do
     end
   end
 
+  def fetch_for_role(key)
+    host.roles.each do |role|
+      role_key = "sidekiq_#{role}_#{key.to_s.gsub('sidekiq_', '')}".to_sym
+      return fetch(role_key) if fetch(role_key)
+    end
+
+    return fetch(key)
+  end
+
   def processes_pids
     pids = []
     sidekiq_roles = Array(fetch(:sidekiq_role))
@@ -97,7 +106,8 @@ namespace :sidekiq do
     Array(fetch(:sidekiq_queue)).each do |queue|
       args.push "--queue #{queue}"
     end
-    args.push "--config #{fetch(:sidekiq_config)}" if fetch(:sidekiq_config)
+    # args.push "--config #{fetch(:sidekiq_config)}" if fetch(:sidekiq_config)
+    args.push "--config #{fetch_for_role(:sidekiq_config)}" if fetch_for_role(:sidekiq_config)
     args.push "--concurrency #{fetch(:sidekiq_concurrency)}" if fetch(:sidekiq_concurrency)
     if process_options = fetch(:sidekiq_options_per_process)
       args.push process_options[idx]
